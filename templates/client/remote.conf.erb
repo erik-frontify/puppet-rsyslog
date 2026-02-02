@@ -1,21 +1,16 @@
-<% if scope.lookupvar('rsyslog::client::remote_servers') -%>
-<% scope.lookupvar('rsyslog::client::remote_servers').flatten.compact.each do |server| -%>
+<% if @remote_servers and @remote_servers.any? -%>
+<% @remote_servers.flatten.compact.each do |server| -%>
 <% if server['pattern'] and server['pattern'] != ''-%>
 <% pattern = server['pattern'] -%>
 <% else -%>
 <% pattern = '*.*' -%>
 <% end -%>
-<% if server['protocol'] == 'TCP' or server['protocol'] == 'tcp'-%>
+<% if server['protocol'].downcase == 'tcp' -%>
 <% protocol = '@@' -%>
-<% protocol_type = 'TCP' -%>
-<% else -%>
-<% if server['protocol'] == 'RELP' or server['protocol'] == 'relp'-%>
+<% elsif server['protocol'].downcase == 'relp'-%>
 <% protocol = ':omrelp:' -%>
-<% protocol_type = 'RELP' -%>
 <% else -%>
 <% protocol = '@' -%>
-<% protocol_type = 'UDP' -%>
-<% end -%>
 <% end -%>
 <% if server['host'] and server['host'] != ''-%>
 <% host = server['host'] -%>
@@ -25,7 +20,7 @@
 <% if server['port'] and server['port'] != ''-%>
 <% port = server['port'] -%>
 <% else -%>
-<% if server['protocol'] == 'RELP' or server['protocol'] == 'relp'-%>
+<% if server['protocol'].downcase == 'relp' -%>
 <% port = '20514' -%>
 <% else -%>
 <% port = '514' -%>
@@ -43,21 +38,18 @@
 <% else -%>
 <% dropaction = '' -%>
 <% end -%>
-# Sending logs that match <%= pattern %> to <%= host %> via <%= protocol_type %> on <%= port %> using <%=format_type %> format.
+<%= pattern %> to <%= host %> via <%= server['protocol'].downcase %> on <%= port %> using <%=format_type %> format.
 <%= pattern %> <%= protocol %><%= host %>:<%= port %><%= format %>
 <%= dropaction %>
 <% end -%>
-<% elsif scope.lookupvar('rsyslog::client::log_remote') -%>
-
-# Log to remote syslog server using <%= scope.lookupvar('rsyslog::client::remote_type') %>
-<% if scope.lookupvar('rsyslog::client::remote_type') == 'tcp' -%>
-*.* @@<%= scope.lookupvar('rsyslog::client::server') -%>:<%= scope.lookupvar('rsyslog::client::port') -%>;<%= scope.lookupvar('rsyslog::client::remote_forward_format') -%>
+<% elsif @log_remote -%>
+<% if @remote_type == 'tcp' -%>
+<% protocol = '@@' -%>
+<% elsif @remote_type == 'relp' -%>
+<% protocol = ':omrelp:' -%>
 <% else -%>
-<% if scope.lookupvar('rsyslog::client::remote_type') == 'relp' -%>
-*.* :omrelp:<%= scope.lookupvar('rsyslog::client::server') -%>:<%= scope.lookupvar('rsyslog::client::port') -%>;<%= scope.lookupvar('rsyslog::client::remote_forward_format') -%>
-<% else -%>
-*.* @<%= scope.lookupvar('rsyslog::client::server') -%>:<%= scope.lookupvar('rsyslog::client::port') -%>;<%= scope.lookupvar('rsyslog::client::remote_forward_format') -%>
+<% protocol = '@' -%>
 <% end -%>
+# Log to remote syslog server using <%= @remote_type %>
+*.* <%= protocol -%><%= @server -%>:<%= @port -%>;<%= @remote_forward_format -%>
 <% end -%>
-<% end -%>
-

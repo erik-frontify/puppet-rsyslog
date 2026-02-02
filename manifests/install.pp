@@ -1,35 +1,29 @@
-# == Class: rsyslog::install
+# @summary
+#   Manages rsyslog packages
 #
-# This class makes sure that the required packages are installed
-#
-# === Parameters
-#
-# === Variables
-#
-# === Examples
-#
-#  class { 'rsyslog::install': }
+# @api private
 #
 class rsyslog::install {
+  assert_private()
+
   if $rsyslog::rsyslog_package_name != false {
     package { $rsyslog::rsyslog_package_name:
       ensure => $rsyslog::package_status,
-      notify => Class['rsyslog::service'],
+      notify => Service[$rsyslog::service_name],
     }
   }
 
   if $rsyslog::relp_package_name != false {
     package { $rsyslog::relp_package_name:
       ensure => $rsyslog::package_status,
-      notify => Class['rsyslog::service'],
+      notify => Service[$rsyslog::service_name],
     }
   }
 
   if $rsyslog::gnutls_package_name != false {
     package { $rsyslog::gnutls_package_name:
       ensure => $rsyslog::package_status,
-      notify => Class['rsyslog::service'],
+      notify => Service[$rsyslog::service_name],
     }
   }
-
 }

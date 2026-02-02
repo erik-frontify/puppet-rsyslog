@@ -1,44 +1,51 @@
-# == Define: rsyslog::snippet
+# @summary
+#   Manage rsyslog configuration snippets
 #
-# This class allows for you to create a rsyslog configuration file with
-# whatever content you pass in.
+# @example Puppet usage
+#   rsyslog::snippet { 'my-rsyslog-config':
+#     content => '<Some rsyslog directive>',
+#   }
 #
-# === Parameters
+# @param content
+#   The actual content to place in the file
 #
-# [*content*]   - The actual content to place in the file. (default: empty sting)
-# [*ensure*]    - How to enforce the file (default: present)
-# [*file_mode*] - The mode of the file snippet (default: $rsyslog::perm_file)
+# @param ensure
+#   Set ensure for the resource
 #
-# === Variables
+# @param file_mode
+#   The mode of the file snippet
 #
-# === Examples
-#
-#  rsyslog::snippet { 'my-rsyslog-config':
-#    content => '<Some rsyslog directive>',
-#  }
-#
-define rsyslog::snippet(
-  $content    = '',
-  $ensure     = 'present',
-  $file_mode  = 'undef'
+define rsyslog::snippet (
+  Enum['present', 'file', 'absent'] $ensure = 'present',
+  Optional[String[1]] $content = undef,
+  Optional[String[1]] $source = undef,
+  Optional[Stdlib::Filemode] $file_mode = undef,
 ) {
-  include ::rsyslog
+  if $content and $source {
+    fail("rsyslog::snippet[${title}]: Can't set 'content' and 'source' at the same time")
+  }
 
-  if $file_mode == 'undef' {
-    $file_mode_real = $rsyslog::perm_file
-  } else {
+  if $file_mode {
     $file_mode_real = $file_mode
+  } else {
+    $file_mode_real = $rsyslog::perm_file
+  }
+
+  if $content {
+    $content_real = "# This file is managed by Puppet, changes may be overwritten\n${content}\n"
+  } else {
+    $content_real = undef
   }
 
   $name_real = regsubst($name,'[/ ]','-','G')
-  file { "${rsyslog::rsyslog_d}${name_real}.conf":
+  file { "${rsyslog::rsyslog_d}/${name_real}.conf":
     ensure  => $ensure,
     owner   => 'root',
     group   => $rsyslog::run_group,
     mode    => $file_mode_real,
-    content => "# This file is managed by Puppet, changes may be overwritten\n${content}\n",
-    require => Class['rsyslog::config'],
-    notify  => Class['rsyslog::service'],
+    content => $content_real,
+    source  => $source,
+    notify  => Service[$rsyslog::service_name],
+    require => File[$rsyslog::rsyslog_d],
   }
-
 }

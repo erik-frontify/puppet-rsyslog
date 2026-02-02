@@ -1,129 +1,65 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe 'rsyslog::snippet', type: :define do
-  context 'Rsyslog version >= 8' do
-    let(:default_facts) do
-      {
-        rsyslog_version: '8.1.2'
-      }
-    end
-
-    context 'osfamily = RedHat' do
-      let :facts do
-        default_facts.merge!(
-          osfamily:                  'RedHat',
-          operatingsystem:           'Redhat',
-          operatingsystemmajrelease: '6'
-        )
-      end
-
-      let(:params) { { 'content' => 'Random Content' } }
-
-      context 'default usage (osfamily = RedHat)' do
-        let(:title) { 'rsyslog-snippet-basic' }
-        it 'compiles' do
-          is_expected.to contain_file('/etc/rsyslog.d/rsyslog-snippet-basic.conf').with_content("# This file is managed by Puppet, changes may be overwritten\nRandom Content\n")
-        end
-      end
-    end
-
-    context 'osfamily = Debian' do
-      let :facts do
-        default_facts.merge!(
-          osfamily:        'Debian',
-          operatingsystem: 'Debian'
-        )
-      end
-
-      let(:params) { { 'content' => 'Random Content' } }
-
-      context 'default usage (osfamily = Debian)' do
-        let(:title) { 'rsyslog-snippet-basic' }
-
-        it 'compiles' do
-          is_expected.to contain_file('/etc/rsyslog.d/rsyslog-snippet-basic.conf').with_content("# This file is managed by Puppet, changes may be overwritten\nRandom Content\n")
-        end
-      end
-    end
-
-    context 'osfamily = FreeBSD' do
-      let :facts do
-        default_facts.merge!(
-          osfamily:        'FreeBSD',
-          operatingsystem: 'FreeBSD'
-        )
-      end
-
-      let(:params) { { 'content' => 'Random Content' } }
-
-      context 'default usage (osfamily = FreeBSD)' do
-        let(:title) { 'rsyslog-snippet-basic' }
-
-        it 'compiles' do
-          is_expected.to contain_file('/usr/local/etc/rsyslog.d/rsyslog-snippet-basic.conf').with_content("# This file is managed by Puppet, changes may be overwritten\nRandom Content\n")
-        end
-      end
-    end
+  let :node do
+    'rspec.example.com'
   end
 
-  context 'Rsyslog version =< 8' do
-    let(:default_facts) do
-      {
-        rsyslog_version: '7.1.2'
-      }
-    end
-
-    context 'osfamily = RedHat' do
+  on_supported_os.each do |os, facts|
+    context "on #{os}" do
       let :facts do
-        default_facts.merge!(
-          osfamily:                  'RedHat',
-          operatingsystem:           'Redhat',
-          operatingsystemmajrelease: '6'
-        )
+        facts
+      end
+      let :pre_condition do
+        'include rsyslog'
       end
 
-      let(:params) { { 'content' => 'Random Content' } }
+      rsyslog_d = case facts[:os]['family']
+                  when 'FreeBSD'
+                    '/usr/local/etc/rsyslog.d'
+                  else
+                    '/etc/rsyslog.d'
+                  end
 
-      context 'default usage (osfamily = RedHat)' do
+      context 'default usage' do
         let(:title) { 'rsyslog-snippet-basic' }
+        let(:params) { { 'content' => 'Random Content' } }
 
         it 'compiles' do
-          is_expected.to contain_file('/etc/rsyslog.d/rsyslog-snippet-basic.conf').with_content("# This file is managed by Puppet, changes may be overwritten\nRandom Content\n")
+          is_expected.to contain_file("#{rsyslog_d}/rsyslog-snippet-basic.conf").with_content("# This file is managed by Puppet, changes may be overwritten\nRandom Content\n")
         end
       end
-    end
 
-    context 'osfamily = Debian' do
-      let :facts do
-        default_facts.merge!(
-          osfamily:        'Debian',
-          operatingsystem: 'Debian'
-        )
-      end
-
-      let(:params) { { 'content' => 'Random Content' } }
-
-      context 'default usage (osfamily = Debian)' do
+      context 'source provided' do
         let(:title) { 'rsyslog-snippet-basic' }
+        let(:params) { { 'source' => 'puppet:///files/rsyslog.snippet' } }
 
         it 'compiles' do
-          is_expected.to contain_file('/etc/rsyslog.d/rsyslog-snippet-basic.conf').with_content("# This file is managed by Puppet, changes may be overwritten\nRandom Content\n")
+          is_expected.to contain_file("#{rsyslog_d}/rsyslog-snippet-basic.conf").with_source('puppet:///files/rsyslog.snippet')
         end
       end
-    end
 
-    context 'osfamily = FreeBSD' do
-      let :facts do
-        default_facts.merge!(osfamily: 'FreeBSD', operatingsystem: 'FreeBSD')
+      context 'content and source provided' do
+        let(:title) { 'rsyslog-snippet-basic' }
+        let(:params) do
+          {
+            'source' => 'puppet:///files/rsyslog.snippet',
+            'content' => 'Random Content'
+          }
+        end
+
+        it 'compiles' do
+          is_expected.to compile.and_raise_error(%r{Can't set 'content' and 'source' at the same time})
+        end
       end
 
-      let(:params) { { 'content' => 'Random Content' } }
-
-      context 'default usage (osfamily = FreeBSD)' do
+      context 'content and source not provided' do
         let(:title) { 'rsyslog-snippet-basic' }
 
         it 'compiles' do
-          is_expected.to contain_file('/usr/local/etc/rsyslog.d/rsyslog-snippet-basic.conf').with_content("# This file is managed by Puppet, changes may be overwritten\nRandom Content\n")
+          is_expected.to contain_file("#{rsyslog_d}/rsyslog-snippet-basic.conf").with_source(nil).with_content(nil)
         end
       end
     end
