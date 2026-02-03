@@ -66,6 +66,8 @@ $ActionSendStreamDriverAuthMode <%= @ssl_auth_mode %>
 $ActionSendStreamDriverPermittedPeer <%= @ssl_permitted_peer %>
 <% end -%>
 <% end -%>
+
+
 <% if @remote_type == 'relp' -%>
 # Load RELP module.
 $ModLoad omrelp
