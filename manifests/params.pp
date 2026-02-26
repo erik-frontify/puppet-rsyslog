@@ -64,10 +64,10 @@ class rsyslog::params {
         $pgsql_package_name                  = 'rsyslog-pgsql'
         $gnutls_package_name                 = 'rsyslog-gnutls'
         $relp_package_name                   = false
-        if versioncmp($::operatingsystemmajrelease, '4') >= 0 {
+        if versioncmp($facts['os']['release']['major'], '4') >= 0 {
           $default_config_file                 = 'rsyslog_default_rhel7'
         }
-        elsif versioncmp($::operatingsystemmajrelease, '2') >= 0 {
+        elsif versioncmp($facts['os']['release']['major'], '2') >= 0 {
           $default_config_file                 = 'rsyslog_default_rhel7'
         } else {
           $default_config_file                 = 'rsyslog_default'
